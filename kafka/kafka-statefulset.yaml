@@ -1,0 +1,35 @@
+# Kafka StatefulSet (3브로커 KRaft 모드)
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kafka
+spec:
+  serviceName: kafka-headless
+  replicas: 3
+  selector:
+    matchLabels:
+      app: kafka
+  template:
+    metadata:
+      labels:
+        app: kafka
+    spec:
+      containers:
+        - name: kafka
+          image: confluentinc/cp-kafka:7.5.3
+          # 각 Pod의 hostname(예: kafka-0)에서 노드 ID를 추출하여 설정
+          command: ["sh", "-c", "export KAFKA_NODE_ID=$(echo ${HOSTNAME} | awk -F'-' '{print $NF}'); /etc/confluent/docker/run"]
+          ports:
+            - containerPort: 9092
+            - containerPort: 29092
+          env:
+            - name: KAFKA_PROCESS_ROLES
+              value: "broker,controller"
+            - name: KAFKA_CONTROLLER_QUORUM_VOTERS
+              value: "0@kafka-0.kafka-headless:29092,1@kafka-1.kafka-headless:29092,2@kafka-2.kafka-headless:29092"
+            - name: KAFKA_LISTENERS
+              value: "PLAINTEXT://:9092,CONTROLLER://:29092"
+            - name: KAFKA_ADVERTISED_LISTENERS
+              value: "PLAINTEXT://$(HOSTNAME).kafka-headless:9092"
+            - name: KAFKA_CONTROLLER_LISTENER_NAMES
+              value: "CONTROLLER"
