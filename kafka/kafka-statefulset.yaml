@@ -1,3 +1,4 @@
+# Kafka StatefulSet (3브로커 KRaft 모드)
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -16,18 +17,12 @@ spec:
       containers:
         - name: kafka
           image: confluentinc/cp-kafka:7.5.3
-          command:
-            - sh
-            - -c
-            - |
-              export KAFKA_NODE_ID=$(echo ${HOSTNAME} | awk -F'-' '{print $NF}');
-              /etc/confluent/docker/run
+          # 각 Pod의 hostname(예: kafka-0)에서 노드 ID를 추출하여 설정
+          command: ["sh", "-c", "export KAFKA_NODE_ID=$(echo ${HOSTNAME} | awk -F'-' '{print $NF}'); /etc/confluent/docker/run"]
           ports:
             - containerPort: 9092
             - containerPort: 29092
           env:
-            - name: CLUSTER_ID
-              value: "abc12345-6789-0abc-def0-1234567890ab"  # 생성한 UUID로 변경
             - name: KAFKA_PROCESS_ROLES
               value: "broker,controller"
             - name: KAFKA_CONTROLLER_QUORUM_VOTERS
@@ -38,14 +33,5 @@ spec:
               value: "PLAINTEXT://$(HOSTNAME).kafka-headless:9092"
             - name: KAFKA_CONTROLLER_LISTENER_NAMES
               value: "CONTROLLER"
-          volumeMounts:
-            - name: data
-              mountPath: /var/lib/kafka/data
-  volumeClaimTemplates:
-    - metadata:
-        name: data
-      spec:
-        accessModes: ["ReadWriteOnce"]
-        resources:
-          requests:
-            storage: 5Gi
+            - name: CLUSTER_ID
+              value: "bgeZzj2yQhyQLEix3qTsyg"
